@@ -44,10 +44,29 @@ public class Checkers extends JPanel {
 		// 2: use Monte Carlo tree search throughout the game.
 		// 3: randomly choose between alpha-beta and MCTS to decide on the next move. 
 		System.out.println("keys: 1 (alpha-beta)  2 (MCTS)  3 (random)\n");
-        //System.out.println(CheckersData.LongToString(0x8000000000000000L >>>16));
-        /*CheckersData d = new CheckersData();
-        for(CheckersMove m:  d.getLegalMoves(CheckersData.RED)){
-            System.out.println(m.toString());
+        /*long legalSpots = 0b0101010110101010010101011010101001010101101010100101010110101010L;
+        long illegalSpots = 0b1010101001010101101010100101010110101010010101011010101001010101L;
+        long blackbb =      0b0101010110101010010101010000000000000000000000000000000000000000L;
+        long redbb =        0b0000000000000000000000001000100000000000101010100101010110101010L;
+        long LegalJumpSpots=0b0000000000101010010101000010101001010100001010100101010000000000L;
+        //long move =0b0000000000000000000000000000000000000000000000000000000000000000000000000L;
+        //System.out.println(CheckersData.LongToString(LegalJumpSpots));
+        //System.out.println(CheckersData.LongToString((blackbb )));
+        //System.out.println(CheckersData.LongToString((legalSpots ^ (blackbb | redbb))));
+        //System.out.println(CheckersData.LongToString(blackbb | redbb));
+
+        long m = blackbb >>> 7;
+        //System.out.println(CheckersData.LongToString(m));
+        //System.out.println(CheckersData.LongToString( redbb));
+        //System.out.println(CheckersData.LongToString(((redbb)>>> 7) & legalSpots));
+        //System.out.println(CheckersData.LongToString(m & (legalSpots ^ (blackbb | redbb))));
+        //System.out.println(CheckersData.LongToString(m));
+
+        CheckersData d = new CheckersData();
+        System.out.println(CheckersData.LongToString(d.topBitBoard | d.bottomBitBoard));
+        for(long movelong:  d.getLegalMoves2(CheckersData.RED)){
+            //System.out.println(CheckersData.LongToString((movelong <<1) & LegalJumpSpots));
+            System.out.println(CheckersData.LongToString((movelong ) & legalSpots));
         }*/
 
 
@@ -135,7 +154,7 @@ public class Checkers extends JPanel {
      */
     public static class PreBoard extends JPanel{
     	CheckersData preBoard;
-    	CheckersMove moveAI;
+    	long moveAI;
     	//setBackground(Color.BLACK);
     	//boolean gameInProgress=true;
     	PreBoard()
@@ -146,31 +165,27 @@ public class Checkers extends JPanel {
             premessage.setText("Initialization");
             preBoard = new CheckersData();
             preBoard.setUpGame();
-            moveAI = new CheckersMove();
+            moveAI = 0;
             repaint();
     	}
-    	public void drawBoard(CheckersData currentBoard, CheckersMove move)
-    	{
-    		premessage = new JLabel("",JLabel.LEFT);
-    		premessage.setFont(new  Font("Serif", Font.BOLD, 14));
-    		premessage.setForeground(Color.green);
-    		premessage.setText("Agent to Play");
-    		preBoard = copyBoard(currentBoard);
-    		moveAI = move.clone();
-    		repaint();
-    	}
+
+        public void drawBoard(CheckersData currentBoard, long move)
+        {
+            premessage = new JLabel("",JLabel.LEFT);
+            premessage.setFont(new  Font("Serif", Font.BOLD, 14));
+            premessage.setForeground(Color.green);
+            premessage.setText("Agent to Play");
+            preBoard = copyBoard(currentBoard);
+            moveAI = move;
+            repaint();
+        }
     	private CheckersData copyBoard(CheckersData board)
         {
             this.preBoard = board;
             CheckersData new_board = new CheckersData();
-            for(int i=0; i<board.board.length;i++)
-            {
-                for(int j=0;j<8;j++)
-                {
-                    new_board.board[i][j]=board.pieceAt(i, j);
-                }
-            }
-            new_board.initBitBoards();
+            new_board.kingBitBoard = board.kingBitBoard;
+            new_board.bottomBitBoard = board.bottomBitBoard;
+            new_board.topBitBoard = board.topBitBoard;
             return new_board;
         }
     	
@@ -213,13 +228,18 @@ public class Checkers extends JPanel {
             }
             
             // paint AI move on the left board
-            if(moveAI.rows.size() > 0)
+            if(moveAI !=0)
             {
+                long m2;
+                long moveAI2 = moveAI & CheckersData.valid;
             	g.setColor(Color.green);
-            	for(int i = 0; i < moveAI.rows.size(); i++)
+            	while (moveAI2 !=0)
             	{
-            		g.drawRect(2 + moveAI.cols.get(i) * 20, 2 + moveAI.rows.get(i) * 20, 19, 19);
-                    g.drawRect(3 + moveAI.cols.get(i) * 20, 3 + moveAI.rows.get(i) * 20, 17, 17);
+                    m2 = moveAI2 & -moveAI2;
+                    moveAI2 ^= m2;
+                    int pos = CheckersData.getBitPosition(m2);
+            		g.drawRect(2 + ((pos%8) * 20), 2 + ((pos/8) * 20), 19, 19);
+                    g.drawRect(3 + ((pos%8) * 20), 3 + ((pos/8) * 20), 17, 17);
             	}
             }
             
@@ -238,7 +258,7 @@ public class Checkers extends JPanel {
         //     move, these give the row and column
         //     containing that piece.  If no piece is
         //     yet selected, then selectedRow is -1.
-        CheckersMove[] legalMoves;  // An array containing the legal moves for the
+        long[] legalMoves;  // An array containing the legal moves for the
         //   current player.
         AdversarialSearch player_1; // AI player, Alpha-beta
         AdversarialSearch player_2; // MCTS
@@ -325,7 +345,10 @@ public class Checkers extends JPanel {
             currentPlayer = CheckersData.RED;   // RED moves first.
             player_1.setCheckersData(board);
             player_2.setCheckersData(board);
-            legalMoves = board.getLegalMoves(CheckersData.RED);  // Get RED's legal moves.
+            legalMoves = board.getLegalMovesPartial(CheckersData.RED);
+            if (legalMoves.length == 0 || legalMoves[0] == 0) {
+                legalMoves = board.getLegalMoves2(CheckersData.RED);  // Get RED's legal moves.
+            }
             /*for(CheckersMove m:  legalMoves){
                 System.out.println(m);
             }*/
@@ -336,7 +359,7 @@ public class Checkers extends JPanel {
             resignButton.setEnabled(true);
             
             ///
-            previous.drawBoard(agentBoard, new CheckersMove());
+            previous.drawBoard(agentBoard, 0);
             ////
             repaint();
         }
@@ -385,8 +408,10 @@ public class Checkers extends JPanel {
                can move, mark this row and col as selected and return.  (This
                might change a previous selection.)  Reset the message, in
                case it was previously displaying an error message. */
-            for (CheckersMove legalMove : legalMoves) {
-                if (legalMove.rows.get(0) == row && legalMove.cols.get(0) == col) {
+            long position = 0x8000000000000000L >>>(row*8 + col);
+            long currentplayerboard = (currentPlayer == CheckersData.BLACK)? board.topBitBoard:board.bottomBitBoard;
+            for (long legalMove : legalMoves) {
+                if ((currentplayerboard & legalMove & position) != 0) {
                     selectedRow = row;
                     selectedCol = col;
                     if (currentPlayer == CheckersData.RED)
@@ -404,12 +429,17 @@ public class Checkers extends JPanel {
                 message.setText("Click the piece you want to move.");
                 return;
             }
-
+            long position2 = 0x8000000000000000L >>>(selectedRow*8 + selectedCol);
             /* If the user clicked on a square where the selected piece can be
                legally moved, then make the move and return. */
-            for (CheckersMove legalMove : legalMoves) {
-                if (legalMove.rows.get(0) == selectedRow && legalMove.cols.get(0) == selectedCol
-                        && legalMove.rows.get(legalMove.rows.size()-1) == row && legalMove.cols.get(legalMove.cols.size()-1) == col) {
+            long unoccupiedspots = CheckersData.valid ^ (board.topBitBoard | board.bottomBitBoard);
+            for (long legalMove : legalMoves) {
+                if ((legalMove & position & unoccupiedspots) != 0 && (currentplayerboard & legalMove & position2) != 0) {
+                    if ((legalMove & CheckersData.invalid)!=0)
+                    {
+                        doMakePartialMove(legalMove);
+                        return;
+                    }
                     doMakeMove(legalMove);
                     return;
                 }
@@ -423,24 +453,55 @@ public class Checkers extends JPanel {
 
         }  // end doClickSquare()
 
+        void doMakePartialMove(long move)
+        {
+            board.makeMove(move);
+            legalMoves = board.getLegalMovesPartial(currentPlayer);
+            displayBoard = copyBoard(board);
+            //Add time
+/* Set selectedRow = -1 to record that the player has not yet selected
+               a piece to move. */
+            selectedRow = -1;
 
+            /* As a courtesy to the user, if all legal moves use the same piece, then
+               select that piece automatically so the user won't have to click on it
+               to select it. */
+            if (legalMoves != null && legalMoves.length != 0 && legalMoves[0] != 0) {
+                long StartSquare = (currentPlayer == CheckersData.BLACK)? board.topBitBoard:board.bottomBitBoard;
+                for (int i = 0; i < legalMoves.length; i++)
+                {
+                    StartSquare = StartSquare & legalMoves[i];
+                    if (StartSquare == 0) break;
+                }
+                if (StartSquare != 0) {
+                    int pos = CheckersData.getBitPosition(StartSquare);
+                    selectedRow = pos/8;
+                    selectedCol = pos%8;
+                }
+            }
+            repaint();
+            if (legalMoves.length == 0 || legalMoves[0] == 0)
+            {
+                doMakeMove(0);
+            }
+        }
         /**
          * This is called when the current player has chosen the specified
          * move.  Make the move, and then either end or continue the game
          * appropriately.
          */
-        void doMakeMove(CheckersMove move) {	
+        void doMakeMove(long move) {
             board.makeMove(move);
             agentBoard=copyBoard(board);
             
-            CheckersMove moveAI = new CheckersMove();
+            long moveAI = 0;
              /* The current player's turn is ended, so change to the other player.
                 Get that player's legal moves.  If the player has no legal moves,
                 then the game ends. */
             //Play checkers game on agentboard
             if (currentPlayer == CheckersData.RED) {
                 currentPlayer = CheckersData.BLACK;
-                legalMoves = board.getLegalMoves(currentPlayer);
+                legalMoves = board.getLegalMoves2(currentPlayer);
                 /*for(CheckersMove m:  legalMoves){
                     System.out.println(m);
                 }*/
@@ -458,13 +519,13 @@ public class Checkers extends JPanel {
                 player_2.setCheckersData(board);
                 
                 switch(aiKey){
-                case 1: moveAI = player_1.makeMove(legalMoves); break;
-                case 2: moveAI = player_2.makeMove(legalMoves); break;
+                case 1: moveAI = player_1.makeMove(legalMoves,currentPlayer); break;
+                case 2: moveAI = player_2.makeMove(legalMoves,currentPlayer); break;
                 case 3: Random rand = new Random();
             			if(rand.nextInt(2) == 1)
-            				moveAI = player_1.makeMove(legalMoves); 
+            				moveAI = player_1.makeMove(legalMoves,currentPlayer);
             			else
-            				moveAI = player_2.makeMove(legalMoves); 
+            				moveAI = player_2.makeMove(legalMoves,currentPlayer);
                 }
 
                 board.makeMove(moveAI);
@@ -482,13 +543,17 @@ public class Checkers extends JPanel {
             previous.drawBoard(agentBoard, moveAI);
 
             currentPlayer = CheckersData.RED;
-            legalMoves = board.getLegalMoves(currentPlayer);
+            legalMoves = board.getLegalMovesPartial(currentPlayer);
+            if (legalMoves.length == 0 || legalMoves[0] == 0)
+            {
+                legalMoves = board.getLegalMoves2(currentPlayer);
+            }
 //            for(CheckersMove m:  legalMoves){
 //                System.out.println(m);
 //            }
-            if (legalMoves == null || legalMoves.length == 0)
+            if (legalMoves == null || legalMoves.length == 0 || legalMoves[0] == 0)
                 gameOver("RED has no moves.  BLACK wins.");
-            else if (legalMoves[0].isJump())
+            else if (((legalMoves[0] << 1) & CheckersData.validJumpSpots) != 0)
                 message.setText("RED:  Make your move.  You must jump.");
             else
                 message.setText("RED:  Make your move.");
@@ -500,17 +565,17 @@ public class Checkers extends JPanel {
             /* As a courtesy to the user, if all legal moves use the same piece, then
                select that piece automatically so the user won't have to click on it
                to select it. */
-            if (legalMoves != null && legalMoves.length != 0) {
-                boolean sameStartSquare = true;
-                for (int i = 1; i < legalMoves.length; i++)
-                    if (legalMoves[i].rows.get(0) != legalMoves[0].rows.get(0)
-                            || legalMoves[i].cols.get(0) != legalMoves[0].cols.get(0)) {
-                        sameStartSquare = false;
-                        break;
-                    }
-                if (sameStartSquare) {
-                    selectedRow = legalMoves[0].rows.get(0);
-                    selectedCol = legalMoves[0].cols.get(0);
+            if (legalMoves != null && legalMoves.length != 0 && legalMoves[0] != 0) {
+                long StartSquare = (currentPlayer == CheckersData.BLACK)? board.topBitBoard:board.bottomBitBoard;
+                for (int i = 0; i < legalMoves.length; i++)
+                {
+                    StartSquare = StartSquare & legalMoves[i];
+                    if (StartSquare == 0) break;
+                }
+                if (StartSquare != 0) {
+                    int pos = CheckersData.getBitPosition(StartSquare);
+                    selectedRow = pos/8;
+                    selectedCol = pos%8;
                 }
             }
 
@@ -568,10 +633,12 @@ public class Checkers extends JPanel {
 
             if (gameInProgress) {
                 /* First, draw a 2-pixel cyan border around the pieces that can be moved. */
+                long currentPlayerBoard = (currentPlayer == CheckersData.BLACK)? displayBoard.topBitBoard:displayBoard.bottomBitBoard;
                 g.setColor(Color.cyan);
-                for (CheckersMove legalMove : legalMoves) {
-                    g.drawRect(2 + legalMove.cols.get(0) * 20, 2 + legalMove.rows.get(0) * 20, 19, 19);
-                    g.drawRect(3 + legalMove.cols.get(0) * 20, 3 + legalMove.rows.get(0) * 20, 17, 17);
+                for (long legalMove : legalMoves) {
+                    int pos = CheckersData.getBitPosition(legalMove & currentPlayerBoard);
+                    g.drawRect(2 + ((pos%8) * 20), 2 + ((pos/8) * 20), 19, 19);
+                    g.drawRect(3 + ((pos%8) * 20), 3 + ((pos/8) * 20), 17, 17);
                 }
                /* If a piece is selected for moving (i.e. if selectedRow >= 0), then
                 draw a 2-pixel white border around that piece and draw green borders
@@ -581,15 +648,15 @@ public class Checkers extends JPanel {
                     g.drawRect(2 + selectedCol*20, 2 + selectedRow*20, 19, 19);
                     g.drawRect(3 + selectedCol*20, 3 + selectedRow*20, 17, 17);
                     g.setColor(Color.green);
-                    for (CheckersMove legalMove : legalMoves) {
-                        if (legalMove.cols.get(0) == selectedCol && legalMove.rows.get(0) == selectedRow) {
+                    long selectedSquare =0x8000000000000000L >>>(selectedRow*8 + selectedCol);
+                    long unoccupiedspots = CheckersData.valid ^ (displayBoard.topBitBoard | displayBoard.bottomBitBoard);
+                    for (long legalMove : legalMoves) {
+                        if ((selectedSquare & legalMove & currentPlayerBoard)!= 0) {
                             //g.drawRect(2 + legalMove.toCol * 20, 2 + legalMove.toRow * 20, 19, 19);
                             //g.drawRect(3 + legalMove.toCol * 20, 3 + legalMove.toRow * 20, 17, 17);
-                        	for(int i = 1; i < legalMove.rows.size(); i++ )
-                        	{
-                        		g.drawRect(2 + legalMove.cols.get(i) * 20, 2 + legalMove.rows.get(i) * 20, 19, 19);
-                                g.drawRect(3 + legalMove.cols.get(i) * 20, 3 + legalMove.rows.get(i) * 20, 17, 17);
-                        	}
+                            int pos = CheckersData.getBitPosition(legalMove &  unoccupiedspots & CheckersData.valid);
+                            g.drawRect(2 + ((pos%8) * 20), 2 + ((pos/8) * 20), 19, 19);
+                            g.drawRect(3 + ((pos%8) * 20), 3 + ((pos/8) * 20), 17, 17);
                         	
                         }
                     }
@@ -602,14 +669,10 @@ public class Checkers extends JPanel {
         {
             this.board = board;
             CheckersData new_board = new CheckersData();
-            for(int i=0; i<board.board.length;i++)
-            {
-                for(int j=0;j<8;j++)
-                {
-                    new_board.board[i][j]=board.pieceAt(i, j);
-                }
-            }
-            new_board.initBitBoards();
+            new_board.topBitBoard = board.topBitBoard;
+            new_board.bottomBitBoard = board.bottomBitBoard;
+            new_board.kingBitBoard = board.kingBitBoard;
+
             return new_board;
         }
         /**

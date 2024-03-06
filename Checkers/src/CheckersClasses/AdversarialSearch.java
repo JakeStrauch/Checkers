@@ -23,7 +23,7 @@ public abstract class AdversarialSearch {
      * 
      * @return an array of valid moves
      */
-    protected CheckersMove[] legalMoves() {
+    protected long[] legalMoves() {
     	// TODO
     	return null; 
     }
@@ -34,5 +34,5 @@ public abstract class AdversarialSearch {
      * @param legalMoves
      * @return CheckersMove 
      */
-    public abstract CheckersMove makeMove(CheckersMove[] legalMoves);
+    public abstract long makeMove(long[] legalMoves, int player);
 }

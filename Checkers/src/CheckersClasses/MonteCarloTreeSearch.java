@@ -22,7 +22,7 @@ import static CheckersClasses.CheckersData.RED;
  * move at the current state.
  */
 public class MonteCarloTreeSearch extends AdversarialSearch {
-    private static final int MAX_TIME = 10000;
+    private static final int MAX_TIME = 20000;
     private static final int MAX_ROLLOUT = 150; //triple the average game length
     private int time = 0;
     Random random;
@@ -39,7 +39,7 @@ public class MonteCarloTreeSearch extends AdversarialSearch {
      *
      * @param legalMoves All the legal moves for the agent at current step.
      */
-    public CheckersMove makeMove(CheckersMove[] legalMoves) {
+    public long makeMove(long[] legalMoves,int player) {
         // The checker board state can be obtained from this.board,
         // which is an 2D array of the following integers defined below:
     	// 
@@ -50,7 +50,7 @@ public class MonteCarloTreeSearch extends AdversarialSearch {
         // 4 - black king
         CSTree<CheckersData> tree = new CSTree<>();
         tree.root = new CSNode<CheckersData>(new CheckersData(board));
-        tree.root.player = BLACK;
+        tree.root.player = player;
         random = new Random();
         CSNode<CheckersData> leaf;
         CSNode<CheckersData> child;
@@ -90,9 +90,9 @@ public class MonteCarloTreeSearch extends AdversarialSearch {
         return legalMoves[maxi];
     }
 
-    private CheckersMove bestMove2(CSNode<CheckersData> root, CheckersMove[] legalMoves) {
+    private long bestMove2(CSNode<CheckersData> root, long[] legalMoves) {
         if(root.children == null || root.numLegalChildren ==0) {
-            return null;
+            return 0;
         }
         CSNode<CheckersData> maxnode = root.children[0];
         int maxwins = maxnode.wins;
@@ -114,10 +114,10 @@ public class MonteCarloTreeSearch extends AdversarialSearch {
         CheckersData b = new CheckersData(child.getData());
         int i = 0;
         int player = child.player;
-        CheckersMove[] moves;
+        long[] moves;
         while(i < MAX_ROLLOUT && !isTerminal(b,player))
         {
-            moves = b.getLegalMoves(player);
+            moves = b.getLegalMoves2(player);
 
             b.makeMove(moves[random.nextInt(moves.length)]);
             player = (player == RED)? BLACK : RED;
@@ -171,11 +171,11 @@ public class MonteCarloTreeSearch extends AdversarialSearch {
 
     private CSNode<CheckersData> expandChildren(CSNode<CheckersData> p) {
         if(p.numLegalChildren == 0) {
-            CheckersMove[] moves = p.data.getLegalMoves(p.player);
+            long[] moves = p.data.getLegalMoves2(p.player);
             CSNode<CheckersData>[] children = new CSNode[moves.length];
             int i = 0;
             int enemyColor = (p.player == RED) ? CheckersData.BLACK : RED;
-            for (CheckersMove m : moves) {
+            for (long m : moves) {
                 CheckersData data = new CheckersData(p.getData());
                 data.makeMove(m);
                 children[i] = new CSNode<CheckersData>(data);

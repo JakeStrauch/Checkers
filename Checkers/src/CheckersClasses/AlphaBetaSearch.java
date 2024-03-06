@@ -12,7 +12,7 @@ package CheckersClasses;
  * move at current state.
 */
 public class AlphaBetaSearch extends AdversarialSearch {
-    private static final int MAXPLY = 12;
+    private static final int MAXPLY = 13;
     /**
      * The input parameter legalMoves contains all the possible moves.
      * It contains four integers:  fromRow, fromCol, toRow, toCol
@@ -27,7 +27,7 @@ public class AlphaBetaSearch extends AdversarialSearch {
      * @param legalMoves All the legal moves for the agent at current step.
      */
     //private static final int CHECKMATE = I;
-    public CheckersMove makeMove(CheckersMove[] legalMoves) {
+    public long makeMove(long[] legalMoves, int player) {
         // The checker board state can be obtained from this.board,
         // which is a int 2D array. The numbers in the `board` are
         // defined as
@@ -40,48 +40,27 @@ public class AlphaBetaSearch extends AdversarialSearch {
         int a = Integer.MIN_VALUE;
         int b = Integer.MAX_VALUE;
         int ply = -1;
-        CheckersMove maxMove = null;
-        int player = board.pieceAt(legalMoves[0].rows.get(0),legalMoves[0].cols.get(0));
-        if(player == CheckersData.RED_KING)
-        {
-            player = CheckersData.RED;
-        }
-        else if(player == CheckersData.BLACK_KING)
-        {
-            player = CheckersData.BLACK;
-        }
+        long maxMove = 0;
+
         System.out.println(player);
         if(terminalTest(player))
-            return null;
+            return 0;
         long tempRedBitBoard;
         long tempBlackBitBoard;
         long tempKingBitBoard;
-        int[][] backup=null;
-        for(CheckersMove m : legalMoves)
+        for(long m : legalMoves)
         {
-            tempBlackBitBoard = board.blackBitBoard;
-            tempRedBitBoard = board.redBitBoard;
+            tempBlackBitBoard = board.topBitBoard;
+            tempRedBitBoard = board.bottomBitBoard;
             tempKingBitBoard = board.kingBitBoard;
-            if(m.isJump() || m.rows.get(1) %7 ==0)
-            {
-                backup= new int[8][8];
-                backup(backup);
-            }
+
 
             board.makeMove(m);
             v = Math.max(v,MinValue(a,b,ply+1,((player==CheckersData.RED)?CheckersData.BLACK:CheckersData.RED)));
             //revert board to original state
-            if(m.isJump() || m.rows.get(1) %7 ==0)
-            {
-                board.board = backup;
-            }
-            else
-            {
-                board.board[m.rows.get(0)][m.cols.get(0)] = board.board[m.rows.get(1)][m.cols.get(1)];
-                board.board[m.rows.get(1)][m.cols.get(1)] = CheckersData.EMPTY;
-            }
-            board.blackBitBoard = tempBlackBitBoard;
-            board.redBitBoard = tempRedBitBoard;
+
+            board.topBitBoard = tempBlackBitBoard;
+            board.bottomBitBoard = tempRedBitBoard;
             board.kingBitBoard = tempKingBitBoard;
             //System.out.println(board);
 
@@ -108,30 +87,17 @@ public class AlphaBetaSearch extends AdversarialSearch {
         long tempRedBitBoard;
         long tempBlackBitBoard;
         long tempKingBitBoard;
-        int[][] backup = null;
-        for(CheckersMove m : board.getLegalMoves(player))
+        for(long m : board.getLegalMoves2(player))
         {
-            tempBlackBitBoard = board.blackBitBoard;
-            tempRedBitBoard = board.redBitBoard;
+            tempBlackBitBoard = board.topBitBoard;
+            tempRedBitBoard = board.bottomBitBoard;
             tempKingBitBoard = board.kingBitBoard;
-            if(m.isJump() || m.rows.get(1) %7 ==0)
-            {
-            backup = new int[8][8];
-            backup(backup);
-            }
+
             board.makeMove(m);
             v = Math.max(v,MinValue(a,b,ply+1,((player==CheckersData.RED)?CheckersData.BLACK:CheckersData.RED)));
-            if(m.isJump() || m.rows.get(1) %7 ==0)
-            {
-                board.board = backup;
-            }
-            else
-            {
-                board.board[m.rows.get(0)][m.cols.get(0)] = board.board[m.rows.get(1)][m.cols.get(1)];
-                board.board[m.rows.get(1)][m.cols.get(1)] = CheckersData.EMPTY;
-            }
-            board.blackBitBoard = tempBlackBitBoard;
-            board.redBitBoard = tempRedBitBoard;
+
+            board.topBitBoard = tempBlackBitBoard;
+            board.bottomBitBoard = tempRedBitBoard;
             board.kingBitBoard = tempKingBitBoard;
             if(v >= b) {
                 return v;
@@ -143,8 +109,8 @@ public class AlphaBetaSearch extends AdversarialSearch {
 
     private int utility() {
 
-        long bb = board.blackBitBoard;
-        long rb = board.redBitBoard;
+        long bb = board.topBitBoard;
+        long rb = board.bottomBitBoard;
         if(bb == 0)
             return Integer.MIN_VALUE;
         if(rb == 0)
@@ -162,8 +128,8 @@ public class AlphaBetaSearch extends AdversarialSearch {
             rb ^= (rb & -(rb));
             count-=2;
         }
-        bb = board.blackBitBoard & board.kingBitBoard;
-        rb = board.redBitBoard & board.kingBitBoard;
+        bb = board.topBitBoard & board.kingBitBoard;
+        rb = board.bottomBitBoard & board.kingBitBoard;
         while (bb != 0)
         {
             bb ^= (bb & -(bb));
@@ -191,30 +157,17 @@ public class AlphaBetaSearch extends AdversarialSearch {
         long tempRedBitBoard;
         long tempBlackBitBoard;
         long tempKingBitBoard;
-        int[][] backup = null;
-        for(CheckersMove m : board.getLegalMoves(player))
+        for(long m : board.getLegalMoves2(player))
         {
-            tempBlackBitBoard = board.blackBitBoard;
-            tempRedBitBoard = board.redBitBoard;
+            tempBlackBitBoard = board.topBitBoard;
+            tempRedBitBoard = board.bottomBitBoard;
             tempKingBitBoard = board.kingBitBoard;
-            if(m.isJump() || m.rows.get(1) %7 ==0)
-            {
-                backup= new int[8][8];
-                backup(backup);
-            }
+
             board.makeMove(m);
             v = Math.min(v,MaxValue(a,b,ply+1,((player==CheckersData.RED)?CheckersData.BLACK:CheckersData.RED)));
-            if(m.isJump() || m.rows.get(1) %7 ==0)
-            {
-                this.board.board = backup;
-            }
-            else
-            {
-                board.board[m.rows.get(0)][m.cols.get(0)] = board.board[m.rows.get(1)][m.cols.get(1)];
-                board.board[m.rows.get(1)][m.cols.get(1)] = CheckersData.EMPTY;
-            }
-            board.blackBitBoard = tempBlackBitBoard;
-            board.redBitBoard = tempRedBitBoard;
+
+            board.topBitBoard = tempBlackBitBoard;
+            board.bottomBitBoard = tempRedBitBoard;
             board.kingBitBoard = tempKingBitBoard;
             if(v <= a) {
                 return v;
@@ -237,13 +190,9 @@ public class AlphaBetaSearch extends AdversarialSearch {
     private CheckersData copyBoard(CheckersData board)
     {
         CheckersData new_board = new CheckersData();
-        for(int i=0; i<board.board.length;i++)
-        {
-            for(int j=0;j<8;j++)
-            {
-                new_board.board[i][j]=board.pieceAt(i, j);
-            }
-        }
+        new_board.kingBitBoard = board.kingBitBoard;
+        new_board.bottomBitBoard = board.bottomBitBoard;
+        new_board.topBitBoard = board.topBitBoard;
         return new_board;
     }
     // TODO

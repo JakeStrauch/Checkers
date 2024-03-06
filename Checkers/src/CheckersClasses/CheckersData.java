@@ -1,5 +1,6 @@
 package CheckersClasses;
 
+import javax.swing.*;
 import java.util.ArrayList;
 
 /**
@@ -24,47 +25,43 @@ public class CheckersData {
             BLACK_KING = 4;
 
 
-    int[][] board;  // board[r][c] is the contents of row r, column c.
-    long blackBitBoard;
-    long redBitBoard;
+    //int[][] board;  // board[r][c] is the contents of row r, column c.
+    long topBitBoard;
+    long bottomBitBoard;
     long kingBitBoard;
 
     /**
      * Constructor.  Create the board and set it up for a new game.
      */
     CheckersData() {
-        board = new int[8][8];
         setUpGame();
     }
     /**
      * Copy Constructor.  copy CheckersData.
      */
     CheckersData(CheckersData data) {
-        board = new int[8][8];
-        blackBitBoard = data.blackBitBoard;
-        redBitBoard = data.redBitBoard;
+        topBitBoard = data.topBitBoard;
+        bottomBitBoard = data.bottomBitBoard;
         kingBitBoard = data.kingBitBoard;
-        for(int i=0; i<8;i++)
-        {
-            for(int j=0;j<8;j++)
-            {
-                board[i][j]= data.board[i][j];
-            }
-        }
     }
 
     public static final String ANSI_RESET = "\u001B[0m";
     public static final String ANSI_RED = "\u001B[31m";
     public static final String ANSI_YELLOW = "\u001B[33m";
-    public static final long invalid = 0b0101010110101010010101011010101001010101101010100101010110101010L;
+    public static final long invalid = 0b1010101001010101101010100101010110101010010101011010101001010101L;
+    public static final long valid = 0b0101010110101010010101011010101001010101101010100101010110101010L;
+    public static final long validJumpSpots=0b0000000000101010010101000010101001010100001010100101010000000000L;
+    public static final long topKingSpaces =0b0101010100000000000000000000000000000000000000000000000000000000L;
+    public static final long bottomKingSpaces =0b0000000000000000000000000000000000000000000000000000000010101010L;
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
 
-        for (int i = 0; i < board.length; i++) {
-            int[] row = board[i];
+        for (int i = 0; i < 8; i++) {
             sb.append(8 - i).append(" ");
-            for (int n : row) {
+            for (int j = 0; j < 8; j++) {
+                int n = pieceAt(i,j);
                 if (n == 0) {
                     sb.append(" ");
                 } else if (n == 1) {
@@ -93,25 +90,46 @@ public class CheckersData {
      * and all such squares in the last three rows contain black squares.
      */
     void setUpGame() {
+        int[][] board;
     	board = new int[][]{
-                {BLACK,EMPTY,BLACK,EMPTY,BLACK,EMPTY,BLACK,EMPTY},
                 {EMPTY,BLACK,EMPTY,BLACK,EMPTY,BLACK,EMPTY,BLACK},
                 {BLACK,EMPTY,BLACK,EMPTY,BLACK,EMPTY,BLACK,EMPTY},
+                {EMPTY,BLACK,EMPTY,BLACK,EMPTY,BLACK,EMPTY,BLACK},
                 {EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY},
                 {EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY},
-                {EMPTY,RED  ,EMPTY,RED  ,EMPTY,RED  ,EMPTY,RED  },
                 {RED  ,EMPTY,RED  ,EMPTY,RED  ,EMPTY,RED  ,EMPTY},
-                {EMPTY,RED  ,EMPTY,RED  ,EMPTY,RED  ,EMPTY,RED  }
+                {EMPTY,RED  ,EMPTY,RED  ,EMPTY,RED  ,EMPTY,RED  },
+                {RED  ,EMPTY,RED  ,EMPTY,RED  ,EMPTY,RED  ,EMPTY}
     	};
-/*        board = new int[][]{
+        /*board = new int[][]{
                 {EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY},
+                {EMPTY,EMPTY,RED  ,EMPTY,RED  ,EMPTY,RED,EMPTY},
                 {EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY},
-                {EMPTY,EMPTY,BLACK,EMPTY,BLACK,EMPTY,BLACK,EMPTY},
+                {EMPTY,EMPTY,RED  ,EMPTY,RED  ,EMPTY,RED  ,EMPTY},
+                {EMPTY,EMPTY,EMPTY,BLACK,EMPTY,EMPTY,EMPTY,EMPTY},
+                {EMPTY,EMPTY,RED  ,EMPTY,RED  ,EMPTY,RED  ,EMPTY},
+                {EMPTY,EMPTY  ,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY},
+                {EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY}
+        };*/
+        /*board = new int[][]{
                 {EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY},
-                {EMPTY,EMPTY,BLACK,EMPTY,BLACK,EMPTY,BLACK,EMPTY},
-                {EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY },
-                {EMPTY,EMPTY,BLACK,EMPTY,BLACK,EMPTY,BLACK,EMPTY},
-                {EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,RED_KING }
+                {EMPTY,EMPTY,BLACK  ,EMPTY,BLACK  ,EMPTY,BLACK  ,EMPTY},
+                {EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY},
+                {EMPTY,EMPTY,BLACK  ,EMPTY,BLACK  ,EMPTY,BLACK  ,EMPTY},
+                {EMPTY,EMPTY,EMPTY,RED,EMPTY,EMPTY,EMPTY,EMPTY},
+                {EMPTY,EMPTY,BLACK  ,EMPTY,BLACK  ,EMPTY,BLACK  ,EMPTY},
+                {EMPTY,BLACK  ,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY},
+                {EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY}
+        };*/
+        /*board = new int[][]{
+                {EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY},
+                {EMPTY,EMPTY,RED  ,EMPTY,RED  ,EMPTY,EMPTY,EMPTY},
+                {EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY},
+                {EMPTY,EMPTY,RED  ,EMPTY,RED  ,EMPTY,EMPTY,EMPTY},
+                {EMPTY,EMPTY,EMPTY,BLACK_KING,EMPTY,EMPTY,EMPTY,EMPTY},
+                {EMPTY,EMPTY,RED  ,EMPTY,EMPTY,EMPTY,EMPTY  ,EMPTY},
+                {EMPTY,BLACK  ,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY},
+                {EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY}
         };*/
         /*board = new int[][]{
                 {BLACK,EMPTY,RED_KING,EMPTY,EMPTY,EMPTY,BLACK,EMPTY},
@@ -123,18 +141,18 @@ public class CheckersData {
                 {BLACK,EMPTY,RED,EMPTY,BLACK,EMPTY,EMPTY,EMPTY},
                 {EMPTY,RED,EMPTY,EMPTY,EMPTY,EMPTY,EMPTY,RED_KING }
         };*/
-        initBitBoards();
-        //blackBitBoard =   0b1010101001010101101010100000000000000000000000000000000000000000L;
-        //redBitBoard = 0b0000000000000000000000000000000000000000010101011010101001010101L;
-        //redBitBoard =     0b0000000000000000000000000100000000000000010101011010001001010101L;
-        //blackBitBoard =   0b1010101001010101101010100000000000000000000000000000000000000000L;
+        initBitBoards(board);
+        //blackBitBoard =   0b0101010110101010010101010000000000000000000000000000000000000000L;
+        //redBitBoard = 0b0000000000000000000000000000000000000000101010100101010110101010L;
+        //redBitBoard =     0b0000000000000000000000000000000000000000101010100101010110101010L;
+        //blackBitBoard =   0b0101010110101010010101010000000000000000000000000000000000000000L;
     	// Set up the board with pieces BLACK, RED, and EMPTY
     }
 
-    public void initBitBoards()
+    private void initBitBoards(int[][] board)
     {
-        blackBitBoard = 0L;
-        redBitBoard = 0L;
+        topBitBoard = 0L;
+        bottomBitBoard = 0L;
         kingBitBoard = 0L;
         int i = 0;
         for(int r[] : board)
@@ -146,12 +164,12 @@ public class CheckersData {
                     case RED_KING:
                         kingBitBoard |= (0x8000000000000000L >>>i);
                     case RED:
-                        redBitBoard |= (0x8000000000000000L >>>i);
+                        bottomBitBoard |= (0x8000000000000000L >>>i);
                         break;
                     case BLACK_KING:
                         kingBitBoard |= (0x8000000000000000L >>>i);
                     case BLACK:
-                        blackBitBoard |= (0x8000000000000000L >>>i);
+                        topBitBoard |= (0x8000000000000000L >>>i);
                         break;
                     default:
                         break;
@@ -166,7 +184,13 @@ public class CheckersData {
     int pieceAt(int row, int col) {
         if(row > 7 || row < 0 || col < 0 || col > 7)
             return -1;
-        return board[row][col];
+        long square = 0x8000000000000000L >>> (row*8 + col);
+        int piece = 0;
+        if ((square & topBitBoard)!=0) piece = BLACK;
+        if ((square & bottomBitBoard)!=0) piece = RED;
+        if ((square & kingBitBoard)!=0) piece += 1;
+
+        return piece;
     }
 
 
@@ -178,14 +202,15 @@ public class CheckersData {
      * recorded in rows and cols.
      *
      */
+    /*
     void makeMove(CheckersMove move) {
         int l = move.rows.size();
         for(int i = 0; i < l-1; i++)
             makeMove(move.rows.get(i), move.cols.get(i), move.rows.get(i+1), move.cols.get(i+1));
-    }
+    }*/
 
 
-    /**
+    /*
      * Make the move from (fromRow,fromCol) to (toRow,toCol).  It is
      * assumed that this move is legal.  If the move is a jump, the
      * jumped piece is removed from the board.  If a piece moves to
@@ -197,46 +222,50 @@ public class CheckersData {
      * @param toRow   row index of the to square
      * @param toCol   column index of the to square
      */
-    void makeMove(int fromRow, int fromCol, int toRow, int toCol) {
+/*
+    void makeMove(int fromRow,int fromCol, int toRow, int toCol) {
 
     	// Update the board for the given move. You need to take care of the following situations:
         // 1. move the piece from (fromRow,fromCol) to (toRow,toCol)
         // 2. if this move is a jump, remove the captublack piece
         // 3. if the piece moves into the kings row on the opponent's side of the board, crowned it as a king
+
+
+
         int fromindex = (((fromRow)*8)+fromCol);
         int toindex = (((toRow)*8)+toCol);
         long temp;
         long fromindexboard = 0x8000000000000000L >>> fromindex;
         long toindexboard = 0x8000000000000000L >>> toindex;
-        if((fromindexboard & redBitBoard) !=0){
+        if((fromindexboard & bottomBitBoard) !=0){
             //red moved
             if(fromindex - toindex < 0) {
                 //upward? move
                 if (fromindex - toindex < -9) {
                     //jump
                     temp = fromindexboard >>> ((toindex-fromindex))/2;
-                    blackBitBoard ^= temp;
+                    topBitBoard ^= temp;
                     if((kingBitBoard & temp) !=0)
                     {
                         kingBitBoard ^= temp;
                     }
                 }
-                redBitBoard |= toindexboard;
-                redBitBoard ^= fromindexboard;
+                bottomBitBoard |= toindexboard;
+                bottomBitBoard ^= fromindexboard;
             }
             else
             {
                 if (fromindex - toindex > 9) {
                     //jump
                     temp =fromindexboard << ((fromindex-toindex))/2;
-                    blackBitBoard ^= temp;
+                    topBitBoard ^= temp;
                     if((kingBitBoard & temp) !=0)
                     {
                         kingBitBoard ^= temp;
                     }
                 }
-                redBitBoard |= toindexboard;
-                redBitBoard ^= fromindexboard;
+                bottomBitBoard |= toindexboard;
+                bottomBitBoard ^= fromindexboard;
 
             }
         }
@@ -247,28 +276,28 @@ public class CheckersData {
                 if (fromindex - toindex < -9) {
                     //jump
                     temp = fromindexboard >>> ((toindex-fromindex))/2;
-                    redBitBoard ^= temp;
+                    bottomBitBoard ^= temp;
                     if((kingBitBoard & temp) !=0)
                     {
                         kingBitBoard ^= temp;
                     }
                 }
-                blackBitBoard |= toindexboard;
-                blackBitBoard ^= fromindexboard;
+                topBitBoard |= toindexboard;
+                topBitBoard ^= fromindexboard;
             }
             else
             {
                 if (fromindex - toindex > 9) {
                     //jump
                     temp = fromindexboard << ((fromindex-toindex))/2;
-                    redBitBoard ^= temp;
+                    bottomBitBoard ^= temp;
                     if((kingBitBoard & temp) !=0)
                     {
                         kingBitBoard ^= temp;
                     }
                 }
-                blackBitBoard |= toindexboard;
-                blackBitBoard ^= fromindexboard;
+                topBitBoard |= toindexboard;
+                topBitBoard ^= fromindexboard;
 
             }
         }
@@ -289,13 +318,691 @@ public class CheckersData {
             }
         }
         //initBitBoards();
-    }
+    }*/
     //check if same state
     //does not consider whose turn it is but cant know if they dont tell us
     public boolean isEqual(CheckersData b)
     {
-        return b.blackBitBoard == blackBitBoard && b.redBitBoard == redBitBoard && b.kingBitBoard == kingBitBoard;
+        return b.topBitBoard == topBitBoard && b.bottomBitBoard == bottomBitBoard && b.kingBitBoard == kingBitBoard;
     }
+
+    long[] getJumpMovesBitBoy(int player)
+    {
+        if (player == BLACK)
+        {
+            return getJumpMovesTop();
+        }
+        return getJumpMovesBottom();
+
+    }
+
+
+    long[] getJumpMovesTop()
+    {
+        int capacity = 10;
+        int index = 0;
+        long[] movesarr = new long[capacity];
+        long m2;
+        long m;
+        long bottomchanges;
+        long topchanges;
+        long unoccupiedspots = valid ^ (topBitBoard | bottomBitBoard);
+        long moves;
+        m2 = (((topBitBoard >>> 7) & bottomBitBoard) >>> 7) & unoccupiedspots;
+        while (m2 != 0){
+            topchanges = m2 & -m2;
+            m2 ^= topchanges;
+            bottomchanges = topchanges << 7;
+            topchanges |= bottomchanges << 7;
+
+            for (long actualmove: getJumpMoveTopHelper(bottomchanges,topchanges)) {
+                if (actualmove == 0) break;
+                movesarr[index] = actualmove;
+                if (++index >= capacity){
+                    capacity += capacity>>>1;
+                    movesarr = expandArraySize(movesarr,capacity);
+                }
+
+            }
+        }
+        m2 = (((topBitBoard >>> 9) & bottomBitBoard) >>> 9) & unoccupiedspots;
+        while (m2 != 0){
+            topchanges = m2 & -m2;
+            m2 ^= topchanges;
+            bottomchanges = topchanges << 9;
+            topchanges |= bottomchanges << 9;
+
+            for (long actualmove: getJumpMoveTopHelper(bottomchanges,topchanges)) {
+                if (actualmove == 0) break;
+                movesarr[index] = actualmove;
+                if (++index >= capacity){
+                    capacity += capacity>>>1;
+                    movesarr = expandArraySize(movesarr,capacity);
+                }
+
+            }
+        }
+        if ((topBitBoard & kingBitBoard) !=0){
+            long newblackBitBoard = topBitBoard & kingBitBoard;
+            m2 = (((newblackBitBoard << 7) & bottomBitBoard) << 7) & unoccupiedspots;
+            while (m2 != 0){
+                topchanges = m2 & -m2;
+                m2 ^= topchanges;
+                bottomchanges = topchanges >> 7;
+                topchanges |= bottomchanges >> 7;
+
+                for (long actualmove: getJumpMoveTopHelper(bottomchanges,topchanges)) {
+                    if (actualmove == 0) break;
+                    movesarr[index] = actualmove;
+                    if (++index >= capacity){
+                        capacity += capacity>>>1;
+                        movesarr = expandArraySize(movesarr,capacity);
+                    }
+
+                }
+            }
+            m2 = (((newblackBitBoard << 9) & bottomBitBoard) << 9) & unoccupiedspots;
+            while (m2 != 0){
+                topchanges = m2 & -m2;
+                m2 ^= topchanges;
+                bottomchanges = topchanges >>> 9;
+                topchanges |= bottomchanges >>> 9;
+
+                for (long actualmove: getJumpMoveTopHelper(bottomchanges,topchanges)) {
+                    if (actualmove == 0) break;
+                    movesarr[index] = actualmove;
+                    if (++index >= capacity){
+                        capacity += capacity>>>1;
+                        movesarr = expandArraySize(movesarr,capacity);
+                    }
+
+                }
+            }
+
+        }
+        return shrinkArraySize(movesarr,index);
+    }
+    long[] getJumpMovesTopPartial()
+    {
+        int capacity = 10;
+        int index = 0;
+        long[] movesarr = new long[capacity];
+        long m2;
+        long m;
+        long bottomchanges;
+        long topchanges;
+        long unoccupiedspots = valid ^ (topBitBoard | bottomBitBoard);
+        long moves;
+        m2 = (((topBitBoard >>> 7) & bottomBitBoard) >>> 7) & unoccupiedspots;
+        while (m2 != 0){
+            topchanges = m2 & -m2;
+            m2 ^= topchanges;
+            bottomchanges = topchanges << 7;
+            topchanges |= bottomchanges << 7;
+
+            movesarr[index] = topchanges | (bottomchanges >>>1);
+            if (++index >= capacity){
+                capacity += capacity>>>1;
+                movesarr = expandArraySize(movesarr,capacity);
+            }
+        }
+        m2 = (((topBitBoard >>> 9) & bottomBitBoard) >>> 9) & unoccupiedspots;
+        while (m2 != 0){
+            topchanges = m2 & -m2;
+            m2 ^= topchanges;
+            bottomchanges = topchanges << 9;
+            topchanges |= bottomchanges << 9;
+
+            movesarr[index] = topchanges | (bottomchanges >>>1);
+            if (++index >= capacity){
+                capacity += capacity>>>1;
+                movesarr = expandArraySize(movesarr,capacity);
+            }
+        }
+        if ((topBitBoard & kingBitBoard) !=0){
+            long newblackBitBoard = topBitBoard & kingBitBoard;
+            m2 = (((newblackBitBoard << 7) & bottomBitBoard) << 7) & unoccupiedspots;
+            while (m2 != 0){
+                topchanges = m2 & -m2;
+                m2 ^= topchanges;
+                bottomchanges = topchanges >> 7;
+                topchanges |= bottomchanges >> 7;
+
+                movesarr[index] = topchanges | (bottomchanges >>>1);
+                if (++index >= capacity){
+                    capacity += capacity>>>1;
+                    movesarr = expandArraySize(movesarr,capacity);
+                }
+            }
+            m2 = (((newblackBitBoard << 9) & bottomBitBoard) << 9) & unoccupiedspots;
+            while (m2 != 0){
+                topchanges = m2 & -m2;
+                m2 ^= topchanges;
+                bottomchanges = topchanges >>> 9;
+                topchanges |= bottomchanges >>> 9;
+
+                movesarr[index] = topchanges | (bottomchanges >>>1);
+                if (++index >= capacity){
+                    capacity += capacity>>>1;
+                    movesarr = expandArraySize(movesarr,capacity);
+                }
+            }
+
+        }
+        return shrinkArraySize(movesarr,index);
+    }
+    long[] expandArraySize(long[] oldarray,int newcapacity){
+        long[] newarray = new long[newcapacity];
+        for (int x = 0; x < oldarray.length; ++x) {
+            newarray[x] = oldarray[x];
+        }
+        return newarray;
+    }
+    long[] shrinkArraySize(long[] oldarray,int newcapacity){
+        long[] newarray = new long[newcapacity];
+        for (int x = 0; x < newcapacity; ++x) {
+            newarray[x] = oldarray[x];
+        }
+        return newarray;
+    }
+    long[] getJumpMoveTopHelper(long bottomChanges, long topChanges){
+        int capacity = 10;
+        int index = 0;
+        long[] jumpmoves = null;
+        long newRedBoard = bottomChanges ^ bottomBitBoard;
+        long m = (topChanges ^ topBitBoard) & topChanges;
+        long unoccupiedspots = valid ^ ((topBitBoard ^ topChanges) | newRedBoard);
+        if (m == 0) m = topChanges;
+        long m2;
+        m2 = (((m >>> 7) & newRedBoard) >>> 7) & unoccupiedspots;
+        if (m2 != 0)
+        {
+            jumpmoves = new long[capacity];
+            for (long actualmove : getJumpMoveTopHelper((m2 << 7) | bottomChanges, m2 | (topChanges & topBitBoard))) {
+                if (actualmove == 0) break;
+                jumpmoves[index] = actualmove;
+                if (++index >= capacity) {
+                    capacity += capacity / 2;
+                    jumpmoves = expandArraySize(jumpmoves, capacity);
+                }
+            }
+
+        }
+        m2 = (((m >>> 9) & newRedBoard) >>> 9) & unoccupiedspots;
+        if (m2 != 0)
+        {
+            if (jumpmoves == null) jumpmoves = new long[capacity];
+            for (long actualmove: getJumpMoveTopHelper((m2 << 9) | bottomChanges, m2 | (topChanges & topBitBoard))) {
+                if (actualmove == 0) break;
+                jumpmoves[index] = actualmove;
+                if (++index >= capacity){
+                    capacity += capacity>>>1;
+                    jumpmoves = expandArraySize(jumpmoves,capacity);
+                }
+            }
+        }
+
+        if ((topChanges & kingBitBoard) != 0){
+            //this piece is a king
+            m2 = (((m << 7) & newRedBoard) << 7) & unoccupiedspots;
+            if (m2 != 0)
+            {
+                if (jumpmoves == null) jumpmoves = new long[capacity];
+                for (long actualmove: getJumpMoveTopHelper((m2 >>> 7) | bottomChanges, m2 | (topChanges & topBitBoard))) {
+                    if (actualmove == 0) break;
+                    jumpmoves[index] = actualmove;
+                    if (++index >= capacity){
+                        capacity += capacity>>>1;
+                        jumpmoves = expandArraySize(jumpmoves,capacity);
+                    }
+                }
+            }
+            m2 = (((m << 9) & newRedBoard) << 9) & unoccupiedspots;
+            if (m2 != 0)
+            {
+                if (jumpmoves == null) jumpmoves = new long[capacity];
+                for (long actualmove: getJumpMoveTopHelper((m2 >>> 9) | bottomChanges, m2 | (topChanges & topBitBoard))) {
+                    if (actualmove == 0) break;
+                    jumpmoves[index] = actualmove;
+                    if (++index >= capacity){
+                        capacity += capacity>>>1;
+                        jumpmoves = expandArraySize(jumpmoves,capacity);
+                    }
+                }
+            }
+
+        }
+
+
+        if (jumpmoves != null) return jumpmoves;
+        if ((topChanges ^ topBitBoard) == 0)  topChanges = 0;
+        return new long[]{(bottomChanges >>> 1) | topChanges};
+    }
+    long[] getJumpMovesBottomPartial()
+    {
+        int capacity = 10;
+        int index = 0;
+        long[] movesarr = new long[capacity];
+        long m2;
+        long m;
+        long topchanges;
+        long bottomchanges;
+        long unoccupiedspots = valid ^ (topBitBoard | bottomBitBoard);
+        long moves;
+        m2 = (((bottomBitBoard << 7) & topBitBoard) << 7) & unoccupiedspots;
+        while (m2 != 0){
+            bottomchanges = m2 & -m2;
+            m2 ^= bottomchanges;
+            topchanges = bottomchanges >>> 7;
+            bottomchanges |= topchanges >>> 7;
+            movesarr[index] = (topchanges >>> 1) | bottomchanges;
+            if (++index >= capacity){
+                capacity += capacity>>>1;
+                movesarr = expandArraySize(movesarr,capacity);
+            }
+        }
+        m2 = (((bottomBitBoard << 9) & topBitBoard) << 9) & unoccupiedspots;
+        while (m2 != 0){
+            bottomchanges = m2 & -m2;
+            m2 ^= bottomchanges;
+            topchanges = bottomchanges >>> 9;
+            bottomchanges |= topchanges >>> 9;
+
+            movesarr[index] = (topchanges >>> 1) | bottomchanges;
+            if (++index >= capacity){
+                capacity += capacity>>>1;
+                movesarr = expandArraySize(movesarr,capacity);
+            }
+        }
+        if ((bottomBitBoard & kingBitBoard) !=0){
+            long modBottomBitBoard = bottomBitBoard & kingBitBoard;
+            m2 = (((modBottomBitBoard >>> 7) & topBitBoard) >>> 7) & unoccupiedspots;
+            while (m2 != 0){
+                bottomchanges = m2 & -m2;
+                m2 ^= bottomchanges;
+                topchanges = bottomchanges << 7;
+                bottomchanges |= topchanges << 7;
+
+                movesarr[index] = (topchanges >>> 1) | bottomchanges;
+                if (++index >= capacity){
+                    capacity += capacity>>>1;
+                    movesarr = expandArraySize(movesarr,capacity);
+                }
+            }
+            m2 = (((modBottomBitBoard >>> 9) & topBitBoard) >>> 9) & unoccupiedspots;
+            while (m2 != 0){
+                bottomchanges = m2 & -m2;
+                m2 ^= bottomchanges;
+                topchanges = bottomchanges << 9;
+                bottomchanges |= topchanges << 9;
+
+                movesarr[index] = (topchanges >>> 1) | bottomchanges;
+                if (++index >= capacity){
+                    capacity += capacity>>>1;
+                    movesarr = expandArraySize(movesarr,capacity);
+                }
+            }
+
+        }
+        return shrinkArraySize(movesarr,index);
+    }
+    long[] getJumpMovesBottom()
+    {
+        int capacity = 10;
+        int index = 0;
+        long[] movesarr = new long[capacity];
+        long m2;
+        long m;
+        long topchanges;
+        long bottomchanges;
+        long unoccupiedspots = valid ^ (topBitBoard | bottomBitBoard);
+        long moves;
+        m2 = (((bottomBitBoard << 7) & topBitBoard) << 7) & unoccupiedspots;
+        while (m2 != 0){
+            bottomchanges = m2 & -m2;
+            m2 ^= bottomchanges;
+            topchanges = bottomchanges >>> 7;
+            bottomchanges |= topchanges >>> 7;
+
+            for (long actualmove: getJumpMoveBottomHelper(topchanges,bottomchanges)) {
+                if (actualmove == 0) break;
+                movesarr[index] = actualmove;
+                if (++index >= capacity){
+                    capacity += capacity>>>1;
+                    movesarr = expandArraySize(movesarr,capacity);
+                }
+
+            }
+        }
+        m2 = (((bottomBitBoard << 9) & topBitBoard) << 9) & unoccupiedspots;
+        while (m2 != 0){
+            bottomchanges = m2 & -m2;
+            m2 ^= bottomchanges;
+            topchanges = bottomchanges >>> 9;
+            bottomchanges |= topchanges >>> 9;
+
+            for (long actualmove: getJumpMoveBottomHelper(topchanges,bottomchanges)) {
+                if (actualmove == 0) break;
+                movesarr[index] = actualmove;
+                if (++index >= capacity){
+                    capacity += capacity>>>1;
+                    movesarr = expandArraySize(movesarr,capacity);
+                }
+
+            }
+        }
+        if ((bottomBitBoard & kingBitBoard) !=0){
+            long modBottomBitBoard = bottomBitBoard & kingBitBoard;
+            m2 = (((modBottomBitBoard >>> 7) & topBitBoard) >>> 7) & unoccupiedspots;
+            while (m2 != 0){
+                bottomchanges = m2 & -m2;
+                m2 ^= bottomchanges;
+                topchanges = bottomchanges << 7;
+                bottomchanges |= topchanges << 7;
+
+                for (long actualmove: getJumpMoveBottomHelper(topchanges,bottomchanges)) {
+                    if (actualmove == 0) break;
+                    movesarr[index] = actualmove;
+                    if (++index >= capacity){
+                        capacity += capacity>>>1;
+                        movesarr = expandArraySize(movesarr,capacity);
+                    }
+
+                }
+            }
+            m2 = (((modBottomBitBoard >>> 9) & topBitBoard) >>> 9) & unoccupiedspots;
+            while (m2 != 0){
+                bottomchanges = m2 & -m2;
+                m2 ^= bottomchanges;
+                topchanges = bottomchanges << 9;
+                bottomchanges |= topchanges << 9;
+
+                for (long actualmove: getJumpMoveBottomHelper(topchanges,bottomchanges)) {
+                    if (actualmove == 0) break;
+                    movesarr[index] = actualmove;
+                    if (++index >= capacity){
+                        capacity += capacity>>>1;
+                        movesarr = expandArraySize(movesarr,capacity);
+                    }
+
+                }
+            }
+
+        }
+        return shrinkArraySize(movesarr,index);
+    }
+
+    long[] getJumpMoveBottomHelper(long topChanges, long bottomChanges){
+        int capacity = 10;
+        int index = 0;
+        long[] jumpmoves = null;
+        long newTopBoard = topChanges ^ topBitBoard;
+        long m = (bottomChanges ^ bottomBitBoard) & bottomChanges;
+        long unoccupiedspots = valid ^ ((bottomBitBoard ^ bottomChanges) | newTopBoard);
+        if (m == 0) m = bottomChanges;
+        long m2;
+        m2 = (((m << 7) & newTopBoard) << 7) & unoccupiedspots;
+        if (m2 != 0)
+        {
+            jumpmoves = new long[capacity];
+            for (long actualmove : getJumpMoveBottomHelper((m2 >>> 7) | topChanges, m2 | (bottomChanges & bottomBitBoard))) {
+                if (actualmove == 0) break;
+                jumpmoves[index] = actualmove;
+                if (++index >= capacity) {
+                    capacity += capacity / 2;
+                    jumpmoves = expandArraySize(jumpmoves, capacity);
+                }
+            }
+
+        }
+        m2 = (((m << 9) & newTopBoard) << 9) & unoccupiedspots;
+        if (m2 != 0)
+        {
+            if (jumpmoves == null) jumpmoves = new long[capacity];
+            for (long actualmove: getJumpMoveBottomHelper((m2 >>> 9) | topChanges, m2 | (bottomChanges & bottomBitBoard))) {
+                if (actualmove == 0) break;
+                jumpmoves[index] = actualmove;
+                if (++index >= capacity){
+                    capacity += capacity>>>1;
+                    jumpmoves = expandArraySize(jumpmoves,capacity);
+                }
+            }
+        }
+
+        if ((bottomChanges & kingBitBoard) != 0){
+            //this piece is a king
+            m2 = (((m >>> 7) & newTopBoard) >>> 7) & unoccupiedspots;
+            if (m2 != 0)
+            {
+                if (jumpmoves == null) jumpmoves = new long[capacity];
+                for (long actualmove: getJumpMoveBottomHelper((m2 << 7) | topChanges, m2 | (bottomChanges & bottomBitBoard))) {
+                    if (actualmove == 0) break;
+                    jumpmoves[index] = actualmove;
+                    if (++index >= capacity){
+                        capacity += capacity>>>1;
+                        jumpmoves = expandArraySize(jumpmoves,capacity);
+                    }
+                }
+            }
+            m2 = (((m >>> 9) & newTopBoard) >>> 9) & unoccupiedspots;
+            if (m2 != 0)
+            {
+                if (jumpmoves == null) jumpmoves = new long[capacity];
+                for (long actualmove: getJumpMoveBottomHelper((m2 << 9) | topChanges, m2 | (bottomChanges & bottomBitBoard))) {
+                    if (actualmove == 0) break;
+                    jumpmoves[index] = actualmove;
+                    if (++index >= capacity){
+                        capacity += capacity>>>1;
+                        jumpmoves = expandArraySize(jumpmoves,capacity);
+                    }
+                }
+            }
+
+        }
+
+
+        if (jumpmoves != null) return jumpmoves;
+        if ((bottomChanges ^ bottomBitBoard) == 0)  bottomChanges = 0;
+        return new long[]{(topChanges >>> 1) | bottomChanges};
+    }
+
+    void makeMove(long move){
+        long movement = move & valid;
+        long captures = (move << 1) & validJumpSpots;
+        if ((move & kingBitBoard) !=0){
+            kingBitBoard ^= movement;
+        }
+        kingBitBoard ^= (captures & kingBitBoard);
+        if ((move & topBitBoard) !=0){
+            topBitBoard ^= movement;
+            bottomBitBoard ^= captures;
+            kingBitBoard |= topBitBoard & bottomKingSpaces;
+        }
+        else{
+            bottomBitBoard ^= movement;
+            topBitBoard ^= captures;
+            kingBitBoard |= bottomBitBoard & topKingSpaces;
+            }
+
+
+    }
+
+    long[] getLegalMoves2(int player)
+    {
+        int index = 0;
+        long[] moves;
+        if(player == BLACK){
+            moves = getJumpMovesTop();
+            if (moves.length > 0 && moves[0] != 0) return moves;
+            return getLegalMovesTop();
+        }
+        moves = getJumpMovesBottom();
+        if (moves.length > 0 && moves[0] != 0) return moves;
+        return getLegalMovesBottom();
+    }
+    long[] getLegalMovesPartial(int player)
+    {
+        int index = 0;
+        long[] moves;
+        if(player == BLACK){
+            return getJumpMovesTopPartial();
+        }
+        return getJumpMovesBottomPartial();
+    }
+
+    long[] getLegalMovesBottom()
+    {
+        int capacity = 10;
+        int index = 0;
+        long[] movesarr = new long[capacity];
+        long m2;
+        long unoccupiedspots = valid ^ (topBitBoard | bottomBitBoard);
+        long moves;
+        m2 = (bottomBitBoard << 7) & unoccupiedspots;
+        //these while loops seperate the individual moves
+        while (m2 != 0) {
+            moves = (m2 & -(m2));
+            m2 ^= moves;
+
+            moves |= moves >>> 7;
+            movesarr[index] = moves;
+            if (++index >= capacity){
+                capacity += capacity >>>2;
+                movesarr = expandArraySize(movesarr,capacity);
+            }
+
+        }
+
+        m2 = (bottomBitBoard << 9) & unoccupiedspots;
+
+
+        while (m2 != 0) {
+            moves = (m2 & -(m2));
+            m2 ^= moves;
+
+            moves |= moves >>> 9;
+            movesarr[index] = moves;
+            if (++index >= capacity){
+                capacity += capacity>>>1;
+                movesarr = expandArraySize(movesarr,capacity);
+            }
+
+        }
+
+
+        if((kingBitBoard & bottomBitBoard) !=0)
+        {
+            m2 = ((kingBitBoard & bottomBitBoard) >>> 7) & unoccupiedspots;
+
+            while (m2 != 0) {
+                moves = (m2 & -(m2));
+                m2 ^= moves;
+                moves |= moves << 7;
+                movesarr[index] = moves;
+                if (++index >= capacity){
+                    capacity += capacity>>>1;
+                    movesarr = expandArraySize(movesarr,capacity);
+                }
+
+            }
+
+
+            m2 = ((kingBitBoard & bottomBitBoard) >>> 9) & unoccupiedspots;
+
+
+            while (m2 != 0) {
+                moves = (m2 & -(m2));
+                m2 ^= moves;
+
+                moves |= moves << 9;
+                movesarr[index] = moves;
+                if (++index >= capacity){
+                    capacity += capacity>>>1;
+                    movesarr = expandArraySize(movesarr,capacity);
+                }
+
+            }
+
+        }
+        return shrinkArraySize(movesarr,index);
+    }
+    long[] getLegalMovesTop()
+    {
+        int capacity = 10;
+        int index = 0;
+        long[] movesarr = new long[capacity];
+        long m2;
+        long unoccupiedspots = valid ^ (topBitBoard | bottomBitBoard);
+        long moves;
+        m2 = (topBitBoard >>> 7) & unoccupiedspots;
+        //these while loops seperate the individual moves
+        while (m2 != 0) {
+            moves = (m2 & -(m2));
+            m2 ^= moves;
+
+            moves |= moves << 7;
+            movesarr[index] = moves;
+            if (++index >= capacity){
+                capacity += capacity>>>1;
+                movesarr = expandArraySize(movesarr,capacity);
+            }
+
+        }
+
+        m2 = (topBitBoard >>> 9) & unoccupiedspots;
+
+
+        while (m2 != 0) {
+            moves = (m2 & -(m2));
+            m2 ^= moves;
+
+            moves |= moves << 9;
+            movesarr[index] = moves;
+            if (++index >= capacity){
+                capacity += capacity>>>1;
+                movesarr = expandArraySize(movesarr,capacity);
+            }
+
+        }
+
+
+        if((kingBitBoard & topBitBoard) !=0)
+        {
+            m2 = ((kingBitBoard & topBitBoard) << 7) & unoccupiedspots;
+
+            while (m2 != 0) {
+                moves = (m2 & -(m2));
+                m2 ^= moves;
+                moves |= moves >> 7;
+                movesarr[index] = moves;
+                if (++index >= capacity){
+                    capacity += capacity>>>1;
+                    movesarr = expandArraySize(movesarr,capacity);
+                }
+
+            }
+
+
+            m2 = ((kingBitBoard & topBitBoard) << 9) & unoccupiedspots;
+
+
+            while (m2 != 0) {
+                moves = (m2 & -(m2));
+                m2 ^= moves;
+
+                moves |= moves >>> 9;
+                movesarr[index] = moves;
+                if (++index >= capacity){
+                    capacity += capacity>>>1;
+                    movesarr = expandArraySize(movesarr,capacity);
+                }
+
+            }
+
+        }
+        return shrinkArraySize(movesarr,index);
+    }
+
     /**
      * Return an array containing all the legal CheckersMoves
      * for the specified player on the current board.  If the player
@@ -333,7 +1040,7 @@ public class CheckersData {
                     movesarr.add(cm);
                     if(cm.cols.size() ==1){
                         System.out.println("ERROR getLegalJumpStarts(player) failed");
-                        System.out.println(LongToString(blackBitBoard | redBitBoard));
+                        System.out.println(LongToString(topBitBoard | bottomBitBoard));
                         System.out.println(LongToString(kingBitBoard));
                         System.out.println(this);
                     }
@@ -348,7 +1055,7 @@ public class CheckersData {
             /**
              * generate all black moves in O(black peices)
              */
-            m2 = ((blackBitBoard >>> 7) ^ (invalid | blackBitBoard | redBitBoard)) & (blackBitBoard >>> 7);
+            m2 = ((topBitBoard >>> 7) ^ (invalid | topBitBoard | bottomBitBoard)) & (topBitBoard >>> 7);
             //these while loops seperate the individual moves
             while (m2 != 0) {
                 moves = (m2 & -(m2));
@@ -364,7 +1071,7 @@ public class CheckersData {
             }
 
 
-            m2 = ((blackBitBoard >>> 9) ^ (invalid | blackBitBoard | redBitBoard)) & (blackBitBoard >>> 9);
+            m2 = ((topBitBoard >>> 9) ^ (invalid | topBitBoard | bottomBitBoard)) & (topBitBoard >>> 9);
 
 
             while (m2 != 0) {
@@ -380,9 +1087,9 @@ public class CheckersData {
             }
 
 
-            if((kingBitBoard & blackBitBoard) !=0)
+            if((kingBitBoard & topBitBoard) !=0)
             {
-                m2 = (((kingBitBoard & blackBitBoard) << 7) ^ (invalid | blackBitBoard | redBitBoard)) & ((kingBitBoard & blackBitBoard) << 7);
+                m2 = (((kingBitBoard & topBitBoard) << 7) ^ (invalid | topBitBoard | bottomBitBoard)) & ((kingBitBoard & topBitBoard) << 7);
 
                 while (m2 != 0) {
                     moves = (m2 & -(m2));
@@ -397,7 +1104,7 @@ public class CheckersData {
                 }
 
 
-                m2 = (((kingBitBoard & blackBitBoard) << 9) ^ (invalid | blackBitBoard | redBitBoard)) & ((kingBitBoard & blackBitBoard) << 9);
+                m2 = (((kingBitBoard & topBitBoard) << 9) ^ (invalid | topBitBoard | bottomBitBoard)) & ((kingBitBoard & topBitBoard) << 9);
 
 
                 while (m2 != 0) {
@@ -416,7 +1123,7 @@ public class CheckersData {
         }
         else
         {
-            m2 = ((redBitBoard << 7) ^ (invalid | blackBitBoard | redBitBoard)) & (redBitBoard << 7);
+            m2 = ((bottomBitBoard << 7) ^ (invalid | topBitBoard | bottomBitBoard)) & (bottomBitBoard << 7);
 
             while (m2 != 0) {
                 moves = (m2 & -(m2));
@@ -431,7 +1138,7 @@ public class CheckersData {
             }
 
 
-            m2 = ((redBitBoard << 9) ^ (invalid | blackBitBoard | redBitBoard)) & (redBitBoard << 9);
+            m2 = ((bottomBitBoard << 9) ^ (invalid | topBitBoard | bottomBitBoard)) & (bottomBitBoard << 9);
 
 
             while (m2 != 0) {
@@ -447,9 +1154,9 @@ public class CheckersData {
             }
 
 
-            if((kingBitBoard & redBitBoard) !=0)
+            if((kingBitBoard & bottomBitBoard) !=0)
             {
-                m2 = (((kingBitBoard & redBitBoard) >>> 7) ^ (invalid | blackBitBoard | redBitBoard)) & ((kingBitBoard & redBitBoard) >>> 7);
+                m2 = (((kingBitBoard & bottomBitBoard) >>> 7) ^ (invalid | topBitBoard | bottomBitBoard)) & ((kingBitBoard & bottomBitBoard) >>> 7);
 
                 while (m2 != 0) {
                     moves = (m2 & -(m2));
@@ -464,7 +1171,7 @@ public class CheckersData {
                 }
 
 
-                m2 = (((kingBitBoard & redBitBoard) >>> 9) ^ (invalid | blackBitBoard | redBitBoard)) & ((kingBitBoard & redBitBoard) >>> 9);
+                m2 = (((kingBitBoard & bottomBitBoard) >>> 9) ^ (invalid | topBitBoard | bottomBitBoard)) & ((kingBitBoard & bottomBitBoard) >>> 9);
 
 
                 while (m2 != 0) {
@@ -496,14 +1203,14 @@ public class CheckersData {
         long m2;
         if(player == BLACK) {
 
-            m2 = ((blackBitBoard >>> 7) ^ (invalid | blackBitBoard | redBitBoard)) & (blackBitBoard >>> 7);
+            m2 = ((topBitBoard >>> 7) ^ (invalid | topBitBoard | bottomBitBoard)) & (topBitBoard >>> 7);
             //these while loops seperate the individual moves
             if (m2 != 0) {
                 return true;
             }
 
 
-            m2 = ((blackBitBoard >>> 9) ^ (invalid | blackBitBoard | redBitBoard)) & (blackBitBoard >>> 9);
+            m2 = ((topBitBoard >>> 9) ^ (invalid | topBitBoard | bottomBitBoard)) & (topBitBoard >>> 9);
 
 
             if  (m2 != 0) {
@@ -512,9 +1219,9 @@ public class CheckersData {
             }
 
 
-            if((kingBitBoard & blackBitBoard) !=0)
+            if((kingBitBoard & topBitBoard) !=0)
             {
-                m2 = (((kingBitBoard & blackBitBoard) << 7) ^ (invalid | blackBitBoard | redBitBoard)) & ((kingBitBoard & blackBitBoard) << 7);
+                m2 = (((kingBitBoard & topBitBoard) << 7) ^ (invalid | topBitBoard | bottomBitBoard)) & ((kingBitBoard & topBitBoard) << 7);
 
                if (m2 != 0) {
                    return true;
@@ -522,7 +1229,7 @@ public class CheckersData {
                 }
 
 
-                m2 = (((kingBitBoard & blackBitBoard) << 9) ^ (invalid | blackBitBoard | redBitBoard)) & ((kingBitBoard & blackBitBoard) << 9);
+                m2 = (((kingBitBoard & topBitBoard) << 9) ^ (invalid | topBitBoard | bottomBitBoard)) & ((kingBitBoard & topBitBoard) << 9);
 
 
                 if (m2 != 0) {
@@ -534,7 +1241,7 @@ public class CheckersData {
         }
         else
         {
-            m2 = ((redBitBoard << 7) ^ (invalid | blackBitBoard | redBitBoard)) & (redBitBoard << 7);
+            m2 = ((bottomBitBoard << 7) ^ (invalid | topBitBoard | bottomBitBoard)) & (bottomBitBoard << 7);
 
             if (m2 != 0) {
                 return true;
@@ -542,7 +1249,7 @@ public class CheckersData {
             }
 
 
-            m2 = ((redBitBoard << 9) ^ (invalid | blackBitBoard | redBitBoard)) & (redBitBoard << 9);
+            m2 = ((bottomBitBoard << 9) ^ (invalid | topBitBoard | bottomBitBoard)) & (bottomBitBoard << 9);
 
 
            if (m2 != 0) {
@@ -551,9 +1258,9 @@ public class CheckersData {
             }
 
 
-            if((kingBitBoard & redBitBoard) !=0)
+            if((kingBitBoard & bottomBitBoard) !=0)
             {
-                m2 = (((kingBitBoard & redBitBoard) >>> 7) ^ (invalid | blackBitBoard | redBitBoard)) & ((kingBitBoard & redBitBoard) >>> 7);
+                m2 = (((kingBitBoard & bottomBitBoard) >>> 7) ^ (invalid | topBitBoard | bottomBitBoard)) & ((kingBitBoard & bottomBitBoard) >>> 7);
 
                if (m2 != 0) {
                     return true;
@@ -561,7 +1268,7 @@ public class CheckersData {
                 }
 
 
-                m2 = (((kingBitBoard & redBitBoard) >>> 9) ^ (invalid | blackBitBoard | redBitBoard)) & ((kingBitBoard & redBitBoard) >>> 9);
+                m2 = (((kingBitBoard & bottomBitBoard) >>> 9) ^ (invalid | topBitBoard | bottomBitBoard)) & ((kingBitBoard & bottomBitBoard) >>> 9);
 
 
                if (m2 != 0) {
@@ -676,19 +1383,19 @@ public class CheckersData {
             /*
                 FIND ALL POSSIBLE REGULAR CAPTURES INSTANTLY
              */
-            m = ( (blackBitBoard >>>7) ^ (invalid | blackBitBoard)) & redBitBoard;
+            m = ( (topBitBoard >>>7) ^ (invalid | topBitBoard)) & bottomBitBoard;
             if(m !=0)
             {
-                m2 = ( (m >>>7) ^ (invalid | blackBitBoard | redBitBoard)) & (m >>>7);
+                m2 = ( (m >>>7) ^ (invalid | topBitBoard | bottomBitBoard)) & (m >>>7);
                 if(m2 != 0) {
                     places |= m2 << 14;
                 }
             }
-            m = ( (blackBitBoard >>>9) ^ (invalid | blackBitBoard)) & redBitBoard;
+            m = ( (topBitBoard >>>9) ^ (invalid | topBitBoard)) & bottomBitBoard;
             if(m !=0)
             {
 
-                m2 = ( (m >>>9) ^ (invalid | blackBitBoard | redBitBoard)) & (m >>>9);
+                m2 = ( (m >>>9) ^ (invalid | topBitBoard | bottomBitBoard)) & (m >>>9);
                 //System.out.println(LongToString(m2));
                 if(m2 != 0) {
                     places |= m2 << 18;
@@ -700,20 +1407,20 @@ public class CheckersData {
                 IF THEY HAVE KINGS THEN FIGURE OUT BACKWARD MOVE CAPTURES
              */
 
-            if((blackBitBoard & kingBitBoard) != 0)
+            if((topBitBoard & kingBitBoard) != 0)
             {
-                m = ( ((blackBitBoard & kingBitBoard) << 7) ^ (invalid | blackBitBoard)) & redBitBoard;
+                m = ( ((topBitBoard & kingBitBoard) << 7) ^ (invalid | topBitBoard)) & bottomBitBoard;
                 if(m !=0)
                 {
-                    m2 = ( (m << 7) ^ (invalid | blackBitBoard | redBitBoard)) & (m << 7);
+                    m2 = ( (m << 7) ^ (invalid | topBitBoard | bottomBitBoard)) & (m << 7);
                     if(m2 != 0) {
                         places |= m2 >>> 14;
                     }
                 }
-                m = ( ((blackBitBoard & kingBitBoard) << 9) ^ (invalid | blackBitBoard)) & redBitBoard;
+                m = ( ((topBitBoard & kingBitBoard) << 9) ^ (invalid | topBitBoard)) & bottomBitBoard;
                 if(m !=0)
                 {
-                    m2 = ( (m << 9) ^ (invalid | blackBitBoard | redBitBoard)) & (m << 9);
+                    m2 = ( (m << 9) ^ (invalid | topBitBoard | bottomBitBoard)) & (m << 9);
                     if(m2 != 0) {
                         places |= m2 >>> 18;
                     }
@@ -728,17 +1435,17 @@ public class CheckersData {
             /*
                 FIND ALL POSSIBLE CAPTURES INSTANTLY
              */
-            if((redBitBoard & kingBitBoard) != 0) {
-                m = (((redBitBoard & kingBitBoard) >>> 7) ^ (invalid | redBitBoard)) & blackBitBoard;
+            if((bottomBitBoard & kingBitBoard) != 0) {
+                m = (((bottomBitBoard & kingBitBoard) >>> 7) ^ (invalid | bottomBitBoard)) & topBitBoard;
                 if (m != 0) {
-                    m2 = ((m >>> 7) ^ (invalid | redBitBoard | blackBitBoard)) & (m >>> 7);
+                    m2 = ((m >>> 7) ^ (invalid | bottomBitBoard | topBitBoard)) & (m >>> 7);
                     if (m2 != 0) {
                         places |= m2 << 14;
                     }
                 }
-                m = (((redBitBoard & kingBitBoard) >>> 9) ^ (invalid | redBitBoard)) & blackBitBoard;
+                m = (((bottomBitBoard & kingBitBoard) >>> 9) ^ (invalid | bottomBitBoard)) & topBitBoard;
                 if (m != 0) {
-                    m2 = ((m >>> 9) ^ (invalid | blackBitBoard | redBitBoard)) & (m >>> 9);
+                    m2 = ((m >>> 9) ^ (invalid | topBitBoard | bottomBitBoard)) & (m >>> 9);
                     if (m2 != 0) {
                         places |= m2 << 18;
                     }
@@ -747,21 +1454,21 @@ public class CheckersData {
             }
 
 
-                m = ( (redBitBoard << 7) ^ (invalid | redBitBoard)) & blackBitBoard;
+                m = ( (bottomBitBoard << 7) ^ (invalid | bottomBitBoard)) & topBitBoard;
                 //System.out.println("1:\n"+LongToString(m));
                 if(m !=0)
                 {
-                    m2 = ( (m << 7) ^ (invalid | blackBitBoard | redBitBoard)) & (m << 7);
+                    m2 = ( (m << 7) ^ (invalid | topBitBoard | bottomBitBoard)) & (m << 7);
                     if(m2 != 0) {
                         places |= m2 >>> 14;
                     }
                 }
-                m = ( (redBitBoard << 9) ^ (invalid | redBitBoard)) & blackBitBoard;
+                m = ( (bottomBitBoard << 9) ^ (invalid | bottomBitBoard)) & topBitBoard;
             //System.out.println("2:\n"+LongToString(m));
             //System.out.println("2:\n"+LongToString(redBitBoard));
                 if(m !=0)
                 {
-                    m2 = ( (m << 9) ^ (invalid | blackBitBoard | redBitBoard)) & (m << 9);
+                    m2 = ( (m << 9) ^ (invalid | topBitBoard | bottomBitBoard)) & (m << 9);
                     if(m2 != 0) {
                         places |= m2 >>> 18;
                     }
@@ -778,7 +1485,7 @@ public class CheckersData {
     /**
     * I modified an integer algorithm to work with longs from http://graphics.stanford.edu/~seander/bithacks.html#ZerosOnRightLinear
      */
-    public int getBitPosition(long l)
+    public static int getBitPosition(long l)
     {
         //0b1111111111111111111111111111111111111111111111111111111111111111
         //0b1111111111111111111111111111111111111111111111111111111111111111
@@ -886,12 +1593,29 @@ public class CheckersData {
 
     public static String LongToString(long l){
         String str = "8    ";
+        String substr = "";
         for(int i =63; i >-1; --i)
         {
             str+=   ((l >>> i) & 1) + " ";
             if((i) %8 == 0)
             {
                 str+="\n"+((i/8 == 0)?" ":(i/8))+"    ";
+            }
+        }
+        str+="\n     A B C D E F G H";
+        return str;
+    }
+    //this format for bitboards doesnt work because moves are too far apart
+    public static String LongToStringV2(long l){
+        String str = "8    ";
+        String substr = "";
+        for(int i =63; i >-1; --i)
+        {
+            substr = ((i/8) % 2 == 0)?substr + ((l >>> i) & 1) + " ":((l >>> i) & 1) + " " +substr;
+            if((i) %8 == 0)
+            {
+                str+=substr+"\n"+((i/8 == 0)?" ":(i/8))+"    ";
+                substr="";
             }
         }
         str+="\n     A B C D E F G H";
